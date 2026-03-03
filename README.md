@@ -35,6 +35,17 @@ npm run dev
 npm run test
 ```
 
+RTDB rules tests (Database Emulator):
+
+```bash
+npm run test:rules
+```
+
+Requirements for `test:rules`:
+
+- Java (required by Firebase emulators)
+- Firebase CLI (the script uses `npx firebase-tools`)
+
 ## Verification
 
 ```bash

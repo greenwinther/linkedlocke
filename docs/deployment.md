@@ -12,6 +12,14 @@ npm run verify
 
 This validates required Firebase env keys, runs lint/tests, and builds Next.js.
 
+Optional (recommended before rules changes):
+
+```bash
+npm run test:rules
+```
+
+`test:rules` runs RTDB security tests against the Firebase Database emulator (requires Java).
+
 ## 2. Firebase rules deployment
 
 One-time setup:
