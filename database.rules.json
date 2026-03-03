@@ -15,7 +15,7 @@
           }
         },
         "settings": {
-          ".write": "data.parent().child('meta/status').val() === 'OPEN'",
+          ".write": "(data.parent().exists() && data.parent().child('meta/status').val() === 'OPEN') || (!data.parent().exists() && newData.parent().child('meta/status').val() === 'OPEN')",
           ".validate": "newData.hasChildren(['deathPropagationEnabled']) && newData.child('deathPropagationEnabled').isBoolean()",
           "$other": {
             ".validate": false
@@ -25,7 +25,7 @@
           ".write": false,
           ".validate": true,
           "$playerId": {
-            ".write": "newData.exists() && root.child('runs/' + $runId + '/meta/status').val() === 'OPEN' && ((!data.exists()) || (data.exists() && newData.child('name').val() === data.child('name').val() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('playerSecretHash').val() === data.child('playerSecretHash').val() && newData.child('lastSeenAt').val() >= data.child('lastSeenAt').val()))",
+            ".write": "newData.exists() && (((data.parent().parent().exists() && data.parent().parent().child('meta/status').val() === 'OPEN') || (!data.parent().parent().exists() && newData.parent().parent().child('meta/status').val() === 'OPEN')) && ((!data.exists()) || (data.exists() && newData.child('name').val() === data.child('name').val() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('playerSecretHash').val() === data.child('playerSecretHash').val() && newData.child('lastSeenAt').val() >= data.child('lastSeenAt').val())))",
             ".validate": "newData.hasChildren(['name', 'createdAt', 'lastSeenAt', 'playerSecretHash']) && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 30 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() > 0 && newData.child('lastSeenAt').isNumber() && newData.child('lastSeenAt').val() >= newData.child('createdAt').val() && newData.child('playerSecretHash').isString() && newData.child('playerSecretHash').val().matches(/^[a-f0-9]{64}$/)",
             "$other": {
               ".validate": false
