@@ -90,6 +90,22 @@ Full deployment guide:
 
 - [Deployment Guide](./docs/deployment.md)
 
+## Maintenance
+
+Delete all runs from the dev database:
+
+```bash
+npm run cleanup:runs:dev
+```
+
+Generic variant (choose project/instance explicitly):
+
+```bash
+npm run cleanup:runs -- --project <your-firebase-project-id> --instance <your-rtdb-instance>
+```
+
+Warning: this permanently deletes all data under `/runs`.
+
 Important limitation:
 
 - Realtime Database rules do not provide a direct dynamic child-count API for this data shape, so strict "max 2 players" is currently enforced in app logic.

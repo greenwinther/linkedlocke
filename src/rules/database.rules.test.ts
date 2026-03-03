@@ -111,6 +111,20 @@ describe("database.rules.json", () => {
     await assertSucceeds(update(ref(hostDb, `runs/${runId}/meta`), { status: "CLOSED" }));
   });
 
+  it("allows only host to delete a run", async () => {
+    const runId = "run-delete";
+    const hostUid = "uid-host-delete";
+    const guestUid = "uid-guest-delete";
+    const hostPlayerId = "player-host-delete";
+
+    const hostDb = testEnv.authenticatedContext(hostUid).database();
+    const guestDb = testEnv.authenticatedContext(guestUid).database();
+
+    await assertSucceeds(set(ref(hostDb, `runs/${runId}`), makeRun(hostUid, hostPlayerId)));
+    await assertFails(set(ref(guestDb, `runs/${runId}`), null));
+    await assertSucceeds(set(ref(hostDb, `runs/${runId}`), null));
+  });
+
   it("allows only encounter owner to write while run is open", async () => {
     const runId = "run-owner-encounter";
     const hostUid = "uid-host-owner";

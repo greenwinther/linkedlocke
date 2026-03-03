@@ -95,6 +95,11 @@ export function touchRecentRun(runId: string, gameId: string, runTitle?: string)
   ]);
 }
 
+export function removeRecentRun(runId: string): void {
+  const existing = getRecentRuns();
+  saveRecentRuns(existing.filter((item) => item.runId !== runId));
+}
+
 export function savePlayerIdentity(runId: string, identity: StoredPlayerIdentity): void {
   if (!isBrowser()) {
     return;
@@ -102,6 +107,16 @@ export function savePlayerIdentity(runId: string, identity: StoredPlayerIdentity
 
   window.localStorage.setItem(runKey(runId, "playerId"), identity.playerId);
   window.localStorage.setItem(runKey(runId, "playerSecret"), identity.playerSecret);
+}
+
+export function clearRunLocalState(runId: string): void {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.localStorage.removeItem(runKey(runId, "playerId"));
+  window.localStorage.removeItem(runKey(runId, "playerSecret"));
+  window.localStorage.removeItem(runKey(runId, "hostSecret"));
 }
 
 export function getPlayerIdentity(runId: string): StoredPlayerIdentity | null {

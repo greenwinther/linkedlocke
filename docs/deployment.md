@@ -42,6 +42,22 @@ npm run deploy:rules -- --project linkedlocke-dev
 
 If you prefer local project aliases, copy `.firebaserc.example` to `.firebaserc` and set your default project.
 
+## 2.5 Reset dev data (optional)
+
+To wipe all runs in the dev RTDB instance:
+
+```bash
+npm run cleanup:runs:dev
+```
+
+For any other project/instance:
+
+```bash
+npm run cleanup:runs -- --project <your-firebase-project-id> --instance <your-rtdb-instance>
+```
+
+Warning: this permanently removes everything under `/runs`.
+
 ## 3. Vercel deployment
 
 In Vercel project settings, add these environment variables for Production (and Preview if desired):

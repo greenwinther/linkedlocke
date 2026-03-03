@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:rules": "npx firebase-tools emulators:exec --project demo-linkedlocke-rules --only database \"vitest run --config vitest.rules.config.ts\"",
-    "deploy:rules": "npx firebase-tools deploy --only database"
+    "deploy:rules": "npx firebase-tools deploy --only database",
+    "cleanup:runs": "npx firebase-tools database:remove /runs",
+    "cleanup:runs:dev": "npx firebase-tools database:remove /runs --project linkedlocke-dev --instance linkedlocke-dev-default-rtdb"
   },
   "dependencies": {
     "firebase": "^12.10.0",

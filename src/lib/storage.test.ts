@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
+  clearRunLocalState,
   getHostSecret,
   getPlayerIdentity,
   getRecentRuns,
+  removeRecentRun,
   saveHostSecret,
   savePlayerIdentity,
   touchRecentRun,
@@ -31,6 +33,19 @@ describe("storage", () => {
     expect(getHostSecret("run-a")).toBe("host-secret");
   });
 
+  it("clears local player identity and host secret for a run", () => {
+    savePlayerIdentity("run-a", {
+      playerId: "player-1",
+      playerSecret: "secret-1",
+    });
+    saveHostSecret("run-a", "host-secret");
+
+    clearRunLocalState("run-a");
+
+    expect(getPlayerIdentity("run-a")).toBeNull();
+    expect(getHostSecret("run-a")).toBeNull();
+  });
+
   it("tracks recent runs in recency order with dedupe", () => {
     touchRecentRun("run-a", "emerald", "Save A");
     touchRecentRun("run-b", "platinum", "Save B");
@@ -43,5 +58,16 @@ describe("storage", () => {
     expect(recent[0].gameId).toBe("emerald");
     expect(recent[0].runTitle).toBe("Save A");
     expect(recent[1].runId).toBe("run-b");
+  });
+
+  it("removes a recent run by run ID", () => {
+    touchRecentRun("run-a", "emerald", "Save A");
+    touchRecentRun("run-b", "platinum", "Save B");
+
+    removeRecentRun("run-a");
+
+    const recent = getRecentRuns();
+    expect(recent).toHaveLength(1);
+    expect(recent[0].runId).toBe("run-b");
   });
 });
