@@ -318,8 +318,8 @@ export default function RunPage() {
       return;
     }
 
-    touchRecentRun(runId, runData.meta.gameId);
-  }, [runId, runData?.meta?.gameId]);
+    touchRecentRun(runId, runData.meta.gameId, runData.meta.runTitle);
+  }, [runId, runData?.meta?.gameId, runData?.meta?.runTitle]);
 
   useEffect(() => {
     if (!runId || !currentPlayerId) {
@@ -478,7 +478,7 @@ export default function RunPage() {
         playerId,
         playerSecret,
       });
-      touchRecentRun(runId, runData.meta.gameId);
+      touchRecentRun(runId, runData.meta.gameId, runData.meta.runTitle);
       setCurrentPlayerId(playerId);
       setJoinName("");
     } catch (caughtError) {
@@ -606,7 +606,10 @@ export default function RunPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Run</p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">{game?.name ?? runData.meta.gameId}</h1>
+            <h1 className="mt-1 text-2xl font-bold text-slate-900">
+              {runData.meta.runTitle ?? game?.name ?? runData.meta.gameId}
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">{game?.name ?? runData.meta.gameId}</p>
             <p className="mt-2 text-xs text-slate-500">Run ID: {runId}</p>
           </div>
 

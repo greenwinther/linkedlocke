@@ -60,9 +60,11 @@ export default function HomePage() {
                       >
                         <span>
                           <span className="block font-semibold text-slate-800">
-                            {game?.name ?? run.gameId}
+                            {run.runTitle ?? game?.name ?? run.gameId}
                           </span>
-                          <span className="block text-xs text-slate-500">Run ID: {run.runId}</span>
+                          <span className="block text-xs text-slate-500">
+                            {game?.name ?? run.gameId} | Run ID: {run.runId}
+                          </span>
                         </span>
                         <span className="text-xs text-slate-500">{formatLastOpened(run.lastOpenedAt)}</span>
                       </Link>

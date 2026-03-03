@@ -5,6 +5,7 @@ const sha256HexSchema = z
   .regex(/^[a-f0-9]{64}$/i, "Expected SHA-256 hex string");
 
 const trimmedName = z.string().trim().min(1).max(30);
+const trimmedRunTitle = z.string().trim().min(1).max(60);
 
 export const JoinPlayerPayloadSchema = z.object({
   playerId: z.string().min(1),
@@ -30,6 +31,7 @@ export const CreateRunPayloadSchema = z.object({
     createdAt: z.number().int().nonnegative(),
     status: z.enum(["OPEN", "CLOSED"]),
     gameId: z.string().trim().min(1),
+    runTitle: trimmedRunTitle,
     hostPlayerId: z.string().min(1),
     hostAuthUid: z.string().min(1),
     hostSecretHash: sha256HexSchema,

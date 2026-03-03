@@ -16,13 +16,20 @@ const CREATE_RUN_MAX_ATTEMPTS = 5;
 export default function NewGamePage() {
   const router = useRouter();
   const [selectedGameId, setSelectedGameId] = useState<string>(GAMES[0]?.id ?? "");
+  const [runTitle, setRunTitle] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCreateRun = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const trimmedRunTitle = runTitle.trim();
     const trimmedName = playerName.trim();
+
+    if (!trimmedRunTitle) {
+      setError("Run title is required.");
+      return;
+    }
 
     if (!trimmedName) {
       setError("Player name is required.");
@@ -61,6 +68,7 @@ export default function NewGamePage() {
             createdAt: now,
             status: "OPEN",
             gameId: selectedGameId,
+            runTitle: trimmedRunTitle,
             hostPlayerId,
             hostAuthUid: authUser.uid,
             hostSecretHash,
@@ -121,7 +129,7 @@ export default function NewGamePage() {
         playerSecret: createdRun.playerSecret,
       });
       saveHostSecret(createdRun.runId, createdRun.hostSecret);
-      touchRecentRun(createdRun.runId, selectedGameId);
+      touchRecentRun(createdRun.runId, selectedGameId, trimmedRunTitle);
 
       router.push(`/run/${createdRun.runId}`);
     } catch (caughtError) {
@@ -163,6 +171,21 @@ export default function NewGamePage() {
               );
             })}
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="run-title" className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Run Title
+          </label>
+          <input
+            id="run-title"
+            value={runTitle}
+            onChange={(event) => setRunTitle(event.target.value)}
+            required
+            maxLength={60}
+            className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-200"
+            placeholder="Example: Emerald Randomizer Save 3"
+          />
         </div>
 
         <div>

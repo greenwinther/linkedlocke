@@ -1,6 +1,7 @@
 export interface RecentRun {
   runId: string;
   gameId: string;
+  runTitle?: string;
   lastOpenedAt: number;
 }
 
@@ -41,6 +42,7 @@ function safeParseRecentRuns(rawValue: string | null): RecentRun[] {
         return (
           typeof candidate.runId === "string" &&
           typeof candidate.gameId === "string" &&
+          (candidate.runTitle === undefined || typeof candidate.runTitle === "string") &&
           typeof candidate.lastOpenedAt === "number"
         );
       })
@@ -76,13 +78,17 @@ export function saveRecentRuns(runs: RecentRun[]): void {
   window.localStorage.setItem(RECENT_RUNS_KEY, JSON.stringify(normalized));
 }
 
-export function touchRecentRun(runId: string, gameId: string): void {
-  const existing = getRecentRuns().filter((item) => item.runId !== runId);
+export function touchRecentRun(runId: string, gameId: string, runTitle?: string): void {
+  const recentRuns = getRecentRuns();
+  const previous = recentRuns.find((item) => item.runId === runId);
+  const existing = recentRuns.filter((item) => item.runId !== runId);
+  const resolvedRunTitle = runTitle ?? previous?.runTitle;
 
   saveRecentRuns([
     {
       runId,
       gameId,
+      runTitle: resolvedRunTitle,
       lastOpenedAt: Date.now(),
     },
     ...existing,

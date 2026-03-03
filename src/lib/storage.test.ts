@@ -32,8 +32,8 @@ describe("storage", () => {
   });
 
   it("tracks recent runs in recency order with dedupe", () => {
-    touchRecentRun("run-a", "emerald");
-    touchRecentRun("run-b", "platinum");
+    touchRecentRun("run-a", "emerald", "Save A");
+    touchRecentRun("run-b", "platinum", "Save B");
     touchRecentRun("run-a", "emerald");
 
     const recent = getRecentRuns();
@@ -41,6 +41,7 @@ describe("storage", () => {
     expect(recent).toHaveLength(2);
     expect(recent[0].runId).toBe("run-a");
     expect(recent[0].gameId).toBe("emerald");
+    expect(recent[0].runTitle).toBe("Save A");
     expect(recent[1].runId).toBe("run-b");
   });
 });

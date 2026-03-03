@@ -5,6 +5,7 @@ export interface RunMeta {
   createdAt: number;
   status: RunStatus;
   gameId: string;
+  runTitle?: string;
   hostPlayerId: string;
   hostAuthUid?: string;
   hostSecretHash: string;
