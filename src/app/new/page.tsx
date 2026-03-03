@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { ref, runTransaction } from "firebase/database";
 
 import { generateId, generateRandomSecret, sha256Hex } from "@/lib/crypto";
+import { ensureAnonymousAuth } from "@/lib/firebase-auth";
 import { getFirebaseDatabase } from "@/lib/firebase";
 import { GAMES } from "@/lib/games";
 import { CreateRunPayloadSchema } from "@/lib/schemas";
@@ -32,6 +33,7 @@ export default function NewGamePage() {
     setIsSubmitting(true);
 
     try {
+      const authUser = await ensureAnonymousAuth();
       const database = getFirebaseDatabase();
       let createdRun:
         | {
@@ -60,6 +62,7 @@ export default function NewGamePage() {
             status: "OPEN",
             gameId: selectedGameId,
             hostPlayerId,
+            hostAuthUid: authUser.uid,
             hostSecretHash,
           },
           settings: {
@@ -67,6 +70,7 @@ export default function NewGamePage() {
           },
           hostPlayer: {
             playerId: hostPlayerId,
+            authUid: authUser.uid,
             name: trimmedName,
             createdAt: now,
             lastSeenAt: now,
@@ -86,6 +90,7 @@ export default function NewGamePage() {
               settings: payload.settings,
               players: {
                 [payload.hostPlayer.playerId]: {
+                  authUid: payload.hostPlayer.authUid,
                   name: payload.hostPlayer.name,
                   createdAt: payload.hostPlayer.createdAt,
                   lastSeenAt: payload.hostPlayer.lastSeenAt,

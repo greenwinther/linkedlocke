@@ -1,12 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { onValue, ref, runTransaction, set, update } from "firebase/database";
 
 import { PokemonSelector, type PokemonSelection } from "@/components/pokemon-selector";
 import { generateId, generateRandomSecret, sha256Hex } from "@/lib/crypto";
+import { ensureAnonymousAuth } from "@/lib/firebase-auth";
 import { getFirebaseDatabase } from "@/lib/firebase";
 import { getGameById, getRoutesForGame } from "@/lib/games";
 import { EncounterPayloadSchema, JoinPlayerPayloadSchema } from "@/lib/schemas";
@@ -175,6 +176,8 @@ export default function RunPage() {
   const runId = Array.isArray(runIdParam) ? runIdParam[0] : runIdParam;
 
   const [runData, setRunData] = useState<RunData | null>(null);
+  const [authUid, setAuthUid] = useState<string | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
@@ -187,11 +190,49 @@ export default function RunPage() {
   const [isUpdatingHostAction, setIsUpdatingHostAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [inviteCopyStatus, setInviteCopyStatus] = useState<"idle" | "copied" | "error">("idle");
+  const autoPropagatingRoutesRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const signIn = async () => {
+      try {
+        setIsAuthLoading(true);
+        const user = await ensureAnonymousAuth();
+
+        if (!isCancelled) {
+          setAuthUid(user.uid);
+          setError(null);
+        }
+      } catch (caughtError) {
+        if (!isCancelled) {
+          const message =
+            caughtError instanceof Error ? caughtError.message : "Failed to authenticate.";
+          setError(message);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsAuthLoading(false);
+        }
+      }
+    };
+
+    void signIn();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!runId) {
       setError("Invalid run ID.");
       setIsLoading(false);
+      return;
+    }
+
+    if (!authUid) {
+      setIsLoading(true);
       return;
     }
 
@@ -223,10 +264,10 @@ export default function RunPage() {
         unsubscribe();
       }
     };
-  }, [runId]);
+  }, [runId, authUid]);
 
   useEffect(() => {
-    if (!runId || !runData) {
+    if (!runId || !runData || !authUid) {
       setCurrentPlayerId(null);
       setIsHost(false);
       setIsIdentityLoading(false);
@@ -241,10 +282,11 @@ export default function RunPage() {
       let verifiedPlayerId: string | null = null;
 
       if (storedIdentity && runData.players?.[storedIdentity.playerId]) {
-        const expectedHash = runData.players[storedIdentity.playerId].playerSecretHash;
+        const expectedPlayer = runData.players[storedIdentity.playerId];
+        const expectedHash = expectedPlayer.playerSecretHash;
         const currentHash = await sha256Hex(storedIdentity.playerSecret);
 
-        if (currentHash === expectedHash) {
+        if (currentHash === expectedHash && expectedPlayer.authUid === authUid) {
           verifiedPlayerId = storedIdentity.playerId;
         }
       }
@@ -254,7 +296,7 @@ export default function RunPage() {
 
       if (hostSecret && runData.meta?.hostSecretHash) {
         const hostHash = await sha256Hex(hostSecret);
-        hostVerified = hostHash === runData.meta.hostSecretHash;
+        hostVerified = hostHash === runData.meta.hostSecretHash && runData.meta.hostAuthUid === authUid;
       }
 
       if (!isCancelled) {
@@ -269,7 +311,7 @@ export default function RunPage() {
     return () => {
       isCancelled = true;
     };
-  }, [runId, runData]);
+  }, [runId, runData, authUid]);
 
   useEffect(() => {
     if (!runId || !runData?.meta?.gameId) {
@@ -306,10 +348,57 @@ export default function RunPage() {
   const inviteLink =
     typeof window !== "undefined" && runId ? `${window.location.origin}/run/${runId}` : "";
 
+  useEffect(() => {
+    if (!runId || !runData || !currentPlayerId || isRunClosed || !runData.settings.deathPropagationEnabled) {
+      return;
+    }
+
+    const otherPlayerId = players.find(([playerId]) => playerId !== currentPlayerId)?.[0];
+
+    if (!otherPlayerId) {
+      return;
+    }
+
+    const database = getFirebaseDatabase();
+    const routeEntries = Object.entries(runData.routes ?? {});
+
+    for (const [routeId, routeRecord] of routeEntries) {
+      const ownEncounter = routeRecord.encounters?.[currentPlayerId];
+      const otherEncounter = routeRecord.encounters?.[otherPlayerId];
+
+      if (!ownEncounter || !otherEncounter) {
+        continue;
+      }
+
+      if (ownEncounter.status !== "alive" || otherEncounter.status !== "dead") {
+        continue;
+      }
+
+      if (autoPropagatingRoutesRef.current.has(routeId)) {
+        continue;
+      }
+
+      autoPropagatingRoutesRef.current.add(routeId);
+      const ownEncounterRef = ref(database, `runs/${runId}/routes/${routeId}/encounters/${currentPlayerId}`);
+
+      void runTransaction(ownEncounterRef, (currentValue) => {
+        const updateValue = getDeathPropagationUpdate(currentValue, otherEncounter.updatedAt);
+        return updateValue ?? currentValue;
+      }).finally(() => {
+        autoPropagatingRoutesRef.current.delete(routeId);
+      });
+    }
+  }, [runId, runData, currentPlayerId, players, isRunClosed]);
+
   const handleJoin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!runId || !runData) {
+      return;
+    }
+
+    if (!authUid) {
+      setJoinError("Authentication is not ready yet.");
       return;
     }
 
@@ -342,6 +431,7 @@ export default function RunPage() {
 
       const payload = JoinPlayerPayloadSchema.parse({
         playerId,
+        authUid,
         name: trimmedName,
         createdAt: now,
         lastSeenAt: now,
@@ -366,6 +456,7 @@ export default function RunPage() {
         return {
           ...playersMap,
           [payload.playerId]: {
+            authUid: payload.authUid,
             name: payload.name,
             createdAt: payload.createdAt,
             lastSeenAt: payload.lastSeenAt,
@@ -441,20 +532,6 @@ export default function RunPage() {
 
     try {
       await set(ref(database, `runs/${runId}/routes/${routeId}/encounters/${currentPlayerId}`), payload);
-
-      if (payload.status === "dead" && runData.settings.deathPropagationEnabled) {
-        const otherPlayerEntry = players.find(([playerId]) => playerId !== currentPlayerId);
-
-        if (otherPlayerEntry) {
-          const otherPlayerId = otherPlayerEntry[0];
-          const otherEncounterRef = ref(database, `runs/${runId}/routes/${routeId}/encounters/${otherPlayerId}`);
-
-          await runTransaction(otherEncounterRef, (currentValue) => {
-            const updateValue = getDeathPropagationUpdate(currentValue, now);
-            return updateValue ?? currentValue;
-          });
-        }
-      }
     } catch (caughtError) {
       setActionError(caughtError instanceof Error ? caughtError.message : "Failed to save encounter.");
       throw caughtError;
@@ -507,12 +584,16 @@ export default function RunPage() {
     return <p className="text-sm text-rose-600">Invalid run ID.</p>;
   }
 
-  if (isLoading) {
-    return <p className="text-sm text-slate-600">Loading run...</p>;
+  if (isAuthLoading) {
+    return <p className="text-sm text-slate-600">Connecting...</p>;
   }
 
   if (error) {
     return <p className="text-sm text-rose-600">{error}</p>;
+  }
+
+  if (isLoading) {
+    return <p className="text-sm text-slate-600">Loading run...</p>;
   }
 
   if (!runData) {

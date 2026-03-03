@@ -8,6 +8,7 @@ const trimmedName = z.string().trim().min(1).max(30);
 
 export const JoinPlayerPayloadSchema = z.object({
   playerId: z.string().min(1),
+  authUid: z.string().min(1),
   name: trimmedName,
   createdAt: z.number().int().nonnegative(),
   lastSeenAt: z.number().int().nonnegative(),
@@ -30,6 +31,7 @@ export const CreateRunPayloadSchema = z.object({
     status: z.enum(["OPEN", "CLOSED"]),
     gameId: z.string().trim().min(1),
     hostPlayerId: z.string().min(1),
+    hostAuthUid: z.string().min(1),
     hostSecretHash: sha256HexSchema,
   }),
   settings: z.object({

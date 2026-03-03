@@ -52,7 +52,7 @@ npm run verify
 ## Notes
 
 - This MVP uses device-bound soft auth via random local secrets and SHA-256 hashes.
-- No Firebase Auth is used yet.
+- Firebase Anonymous Auth is used for ownership binding in RTDB rules.
 - Pokemon names and sprites are fetched from PokeAPI at runtime.
 
 ## RTDB Rules
@@ -63,7 +63,9 @@ npm run verify
 - enum checks (`OPEN`/`CLOSED`, `alive`/`dead`)
 - value/type checks for IDs, names, hashes, timestamps
 - host metadata immutability after creation (only `status: OPEN -> CLOSED`)
-- settings and encounter writes only while run is `OPEN`
+- host-only writes for run settings and close action
+- player ownership binding via `players/{playerId}.authUid`
+- encounter writes limited to encounter owner auth uid
 
 Deploy rules:
 
@@ -79,5 +81,4 @@ Full deployment guide:
 
 Important limitation:
 
-- Because this MVP does not use Firebase Auth yet, rules cannot cryptographically enforce "this device is this player/host". The rules harden data integrity and shape, but they do not provide strong identity authorization until Firebase Auth is added.
-- Realtime Database rules do not provide a direct dynamic child-count API for this data shape, so strict "max 2 players" is currently enforced in app logic (and should be moved to auth-backed server enforcement later).
+- Realtime Database rules do not provide a direct dynamic child-count API for this data shape, so strict "max 2 players" is currently enforced in app logic.

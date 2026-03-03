@@ -1,15 +1,34 @@
 {
   "rules": {
     ".read": false,
-    ".write": true,
+    ".write": false,
     "runs": {
       "$runId": {
-        ".read": true,
-        ".validate": "newData.exists()"
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['meta', 'settings', 'players'])",
+        "meta": {
+          ".validate": "newData.hasChildren(['createdAt', 'status', 'gameId', 'hostPlayerId', 'hostAuthUid', 'hostSecretHash']) && newData.child('createdAt').isNumber() && newData.child('createdAt').val() > 0 && newData.child('status').isString() && (newData.child('status').val() === 'OPEN' || newData.child('status').val() === 'CLOSED') && newData.child('gameId').isString() && newData.child('gameId').val().length > 0 && newData.child('gameId').val().length <= 64 && newData.child('hostPlayerId').isString() && newData.child('hostPlayerId').val().length > 0 && newData.child('hostAuthUid').isString() && newData.child('hostAuthUid').val().length > 0 && newData.child('hostSecretHash').isString() && newData.child('hostSecretHash').val().matches(/^[a-f0-9]{64}$/i)"
+        },
+        "settings": {
+          ".validate": "newData.hasChildren(['deathPropagationEnabled']) && newData.child('deathPropagationEnabled').isBoolean() && (!data.exists() || newData.val() === data.val() || data.parent().child('meta/hostAuthUid').val() === auth.uid) && (data.parent().child('meta/status').val() !== 'CLOSED' || newData.val() === data.val())"
+        },
+        "players": {
+          "$playerId": {
+            ".validate": "newData.hasChildren(['name', 'authUid', 'createdAt', 'lastSeenAt', 'playerSecretHash']) && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 30 && newData.child('authUid').isString() && newData.child('authUid').val().length > 0 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() > 0 && newData.child('lastSeenAt').isNumber() && newData.child('lastSeenAt').val() >= newData.child('createdAt').val() && newData.child('playerSecretHash').isString() && newData.child('playerSecretHash').val().matches(/^[a-f0-9]{64}$/i) && ((data.exists() && newData.child('authUid').val() === data.child('authUid').val() && newData.child('name').val() === data.child('name').val() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('lastSeenAt').val() === data.child('lastSeenAt').val() && newData.child('playerSecretHash').val() === data.child('playerSecretHash').val()) || (!data.exists() && newData.child('authUid').val() === auth.uid) || (data.exists() && data.child('authUid').val() === auth.uid && newData.child('authUid').val() === data.child('authUid').val() && newData.child('name').val() === data.child('name').val() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('playerSecretHash').val() === data.child('playerSecretHash').val() && newData.child('lastSeenAt').val() >= data.child('lastSeenAt').val())) && (data.parent().parent().child('meta/status').val() !== 'CLOSED' || (data.exists() && newData.child('authUid').val() === data.child('authUid').val() && newData.child('name').val() === data.child('name').val() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('lastSeenAt').val() === data.child('lastSeenAt').val() && newData.child('playerSecretHash').val() === data.child('playerSecretHash').val()))"
+          }
+        },
+        "routes": {
+          "$routeId": {
+            ".validate": "newData.hasChildren(['encounters'])",
+            "encounters": {
+              "$playerId": {
+                ".validate": "newData.hasChildren(['speciesId', 'speciesName', 'status', 'updatedAt']) && root.child('runs/' + $runId + '/players/' + $playerId + '/authUid').val() === auth.uid && newData.child('speciesId').isNumber() && newData.child('speciesId').val() > 0 && newData.child('speciesId').val() % 1 === 0 && newData.child('speciesName').isString() && newData.child('speciesName').val().length > 0 && newData.child('speciesName').val().length <= 60 && (!newData.child('spriteUrl').exists() || (newData.child('spriteUrl').isString() && newData.child('spriteUrl').val().length <= 500)) && (!newData.child('nickname').exists() || (newData.child('nickname').isString() && newData.child('nickname').val().length <= 30)) && newData.child('status').isString() && (newData.child('status').val() === 'alive' || newData.child('status').val() === 'dead') && newData.child('updatedAt').isNumber() && newData.child('updatedAt').val() > 0"
+              }
+            }
+          }
+        }
       }
-    },
-    "$other": {
-      ".validate": false
     }
   }
 }

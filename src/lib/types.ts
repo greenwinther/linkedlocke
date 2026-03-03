@@ -6,6 +6,7 @@ export interface RunMeta {
   status: RunStatus;
   gameId: string;
   hostPlayerId: string;
+  hostAuthUid?: string;
   hostSecretHash: string;
 }
 
@@ -15,6 +16,7 @@ export interface RunSettings {
 
 export interface PlayerRecord {
   name: string;
+  authUid?: string;
   createdAt: number;
   lastSeenAt: number;
   playerSecretHash: string;

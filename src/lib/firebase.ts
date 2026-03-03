@@ -27,6 +27,10 @@ function assertFirebaseConfig(): void {
 
 export function getFirebaseDatabase() {
   assertFirebaseConfig();
-  const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-  return getDatabase(app);
+  return getDatabase(getFirebaseApp());
+}
+
+export function getFirebaseApp() {
+  assertFirebaseConfig();
+  return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 }

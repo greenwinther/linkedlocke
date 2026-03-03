@@ -21,6 +21,11 @@ npx firebase-tools login
 npx firebase-tools use linkedlocke-dev
 ```
 
+Enable Firebase Authentication:
+
+1. Firebase Console -> Authentication -> Sign-in method
+2. Enable `Anonymous`
+
 Deploy rules:
 
 ```bash
